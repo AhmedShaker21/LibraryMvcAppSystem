@@ -1,0 +1,145 @@
+﻿@* @using LibraryMvcApp.ViewModels
+@model CreateFormVm
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-3">
+        <label class="form-label">رقم الإدارة</label>
+        <input asp-for="DepartmentCode"
+               class="form-control"
+               placeholder="مثال: 50"
+               required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">اسم الإجراء</label>
+        <input asp-for="ProcedureName" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">كود الإجراء</label>
+        <input asp-for="ProcedureCode" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">اسم النموذج</label>
+        <input asp-for="FormName" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        حفظ
+    </button>
+</form> *@
+@using LibraryMvcApp.ViewModels
+@model CreateFormVm
+
+<form asp-action="Create" method="post" id="createForm">
+
+    <!-- رقم الإدارة -->
+    <div class="mb-3">
+        <label class="form-label">رقم الإدارة</label>
+        <input asp-for="DepartmentCode"
+               class="form-control"
+               required />
+    </div>
+
+    <!-- رقم النموذج -->
+    <div class="mb-3">
+        <label asp-for="FormNumber" class="form-label">
+            رقم النموذج
+        </label>
+
+        <input asp-for="FormNumber"
+               id="formNumberInput"
+               class="form-control"
+               type="number"
+               min="1"
+               value="@(Model.LastFormNumber + 1)"
+               required />
+
+        <small id="warningText"
+               class="text-warning fw-bold"
+               style="display:none;">
+        </small>
+    </div>
+
+    <!-- اسم الإجراء -->
+    <div class="mb-3">
+        <label class="form-label">اسم الإجراء</label>
+        <input asp-for="ProcedureName"
+               class="form-control"
+               required />
+    </div>
+
+    <!-- كود الإجراء -->
+    <div class="mb-3">
+        <label class="form-label">كود الإجراء</label>
+        <input asp-for="ProcedureCode"
+               class="form-control" />
+    </div>
+
+    <!-- اسم النموذج -->
+    <div class="mb-3">
+        <label class="form-label">اسم النموذج</label>
+        <input asp-for="FormName"
+               class="form-control"
+               required />
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        حفظ
+    </button>
+
+</form>
+
+
+<script>
+
+    const lastNumber = @Model.LastFormNumber;
+    const expectedNumber = lastNumber + 1;
+
+    const input = document.getElementById("formNumberInput");
+    const form = document.getElementById("createForm");
+    const warning = document.getElementById("warningText");
+
+    // عرض warning أثناء الكتابة
+    input.addEventListener("input", function () {
+
+        const value = parseInt(input.value);
+
+        if (value !== expectedNumber) {
+
+            warning.style.display = "block";
+
+            warning.innerText =
+                `⚠️ الرقم المتوقع هو ${expectedNumber} وليس ${value}`;
+        }
+        else {
+
+            warning.style.display = "none";
+        }
+
+    });
+
+    // confirmation قبل الحفظ
+    form.addEventListener("submit", function (e) {
+
+        const value = parseInt(input.value);
+
+        if (value !== expectedNumber) {
+
+            const confirmed = confirm(
+                `الرقم المتوقع هو ${expectedNumber}\n` +
+                `وأنت أدخلت ${value}\n\n` +
+                `هل أنت متأكد أنك تريد المتابعة؟`
+            );
+
+            if (!confirmed) {
+
+                e.preventDefault();
+            }
+        }
+
+    });
+
+</script>

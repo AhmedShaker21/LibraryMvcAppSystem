@@ -1,0 +1,186 @@
+﻿@using LibraryMvcApp.ViewModels
+@model FormsAllVm
+@{
+    ViewData["Title"] = "كل النماذج";
+
+    // where the row actions (delete / save review) should return to
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    int firstShown = Model.TotalCount == 0 ? 0 : (Model.Page - 1) * Model.PageSize + 1;
+    int lastShown = Math.Min(Model.Page * Model.PageSize, Model.TotalCount);
+
+    // compact page window: 1 … 4 5 [6] 7 8 … 20
+    int pFrom = Math.Max(1, Model.Page - 2);
+    int pTo = Math.Min(Model.TotalPages, Model.Page + 2);
+}
+
+<div class="page-head">
+    <div>
+        <h2><i class="fas fa-table-list me-2 text-warning"></i>كل النماذج</h2>
+        <p>@Model.TotalCount نموذج@(Model.DepartmentNo != null || !string.IsNullOrEmpty(Model.Q) ? " (حسب البحث)" : "")</p>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] is string err)
+{
+    <div class="alert alert-danger" role="alert">@err</div>
+}
+
+<form method="get" asp-action="All" class="table-container mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+            <label class="form-label" for="departmentNo">رقم الإدارة</label>
+            <input type="number" min="1" id="departmentNo" name="departmentNo" value="@Model.DepartmentNo"
+                   class="form-control" placeholder="مثال: 50" />
+        </div>
+        <div class="col-12 col-md">
+            <label class="form-label" for="q">بحث (رقم النموذج / اسم النموذج / اسم الإجراء)</label>
+            <input type="search" id="q" name="q" value="@Model.Q" class="form-control" autocomplete="off"
+                   placeholder="مثال: 230 أو 53/230 أو جزء من الاسم" />
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> بحث</button>
+            @if (Model.DepartmentNo != null || !string.IsNullOrEmpty(Model.Q))
+            {
+                <a asp-action="All" class="btn btn-secondary">مسح</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="table-container">
+    <div class="table-responsive">
+        <table class="table index-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:90px">الإدارة</th>
+                    <th>رقم النموذج</th>
+                    <th>اسم الإجراء</th>
+                    <th>اسم النموذج</th>
+                    <th style="width:90px">حذف</th>
+                    <th style="width:190px">المراجعة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var x in Model.Items)
+                {
+                    <tr>
+                        <td><strong>@x.DepartmentNo</strong></td>
+                        <td><strong>@x.FullNumber</strong></td>
+                        <td class="name">@x.ProcedureName</td>
+                        <td class="name">@x.FormName</td>
+                        <td>
+                            <button type="button" class="btn btn-secondary btn-sm text-danger"
+                                    data-delete="@x.Id" title="حذف النموذج" aria-label="حذف النموذج">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <input type="number" min="0" value="@x.Review" data-review-input="@x.Id"
+                                       class="form-control form-control-sm" style="width:80px" aria-label="المراجعة" />
+                                <button type="button" class="btn btn-sm btn-primary" data-save="@x.Id" title="حفظ" aria-label="حفظ">
+                                    <i class="fas fa-floppy-disk"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (Model.Items.Count == 0)
+                {
+                    <tr class="empty-row"><td colspan="6">لا توجد نماذج مطابقة.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <small class="text-muted">عرض @firstShown – @lastShown من @Model.TotalCount</small>
+
+            <nav aria-label="الصفحات">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="All" asp-route-page="@(Model.Page - 1)"
+                           asp-route-departmentNo="@Model.DepartmentNo" asp-route-q="@Model.Q">السابق</a>
+                    </li>
+
+                    @if (pFrom > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="All" asp-route-page="1"
+                               asp-route-departmentNo="@Model.DepartmentNo" asp-route-q="@Model.Q">1</a>
+                        </li>
+                        @if (pFrom > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        }
+                    }
+
+                    @for (int i = pFrom; i <= pTo; i++)
+                    {
+                        <li class="page-item @(i == Model.Page ? "active" : "")">
+                            <a class="page-link" asp-action="All" asp-route-page="@i"
+                               asp-route-departmentNo="@Model.DepartmentNo" asp-route-q="@Model.Q">@i</a>
+                        </li>
+                    }
+
+                    @if (pTo < Model.TotalPages)
+                    {
+                        @if (pTo < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" asp-action="All" asp-route-page="@Model.TotalPages"
+                               asp-route-departmentNo="@Model.DepartmentNo" asp-route-q="@Model.Q">@Model.TotalPages</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="All" asp-route-page="@(Model.Page + 1)"
+                           asp-route-departmentNo="@Model.DepartmentNo" asp-route-q="@Model.Q">التالي</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+@* One shared POST form (one anti-forgery token) used by every row's delete / save button. *@
+<form id="rowForm" method="post" asp-controller="FormsRegister" asp-action="UpdateReview" class="d-none">
+    <input type="hidden" name="id" />
+    <input type="hidden" name="review" />
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('rowForm');
+            var updateUrl = '@Url.Action("UpdateReview", "FormsRegister")';
+            var deleteUrl = '@Url.Action("Delete", "FormsRegister")';
+
+            document.addEventListener('click', function (e) {
+                var del = e.target.closest('[data-delete]');
+                var save = e.target.closest('[data-save]');
+
+                if (del) {
+                    if (!confirm('هل أنت متأكد من حذف هذا النموذج؟\nلا يمكن التراجع عن هذا الإجراء.')) return;
+                    form.action = deleteUrl;
+                    form.querySelector('[name="id"]').value = del.getAttribute('data-delete');
+                    form.submit();
+                } else if (save) {
+                    var id = save.getAttribute('data-save');
+                    var input = document.querySelector('[data-review-input="' + id + '"]');
+                    form.action = updateUrl;
+                    form.querySelector('[name="id"]').value = id;
+                    form.querySelector('[name="review"]').value = input ? input.value : '';
+                    form.submit();
+                }
+            });
+        })();
+    </script>
+}

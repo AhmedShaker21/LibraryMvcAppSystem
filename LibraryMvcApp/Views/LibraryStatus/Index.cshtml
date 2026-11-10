@@ -1,0 +1,249 @@
+@using System.Globalization
+@using LibraryMvcApp.ViewModels
+@model LibraryStatusVm
+@{
+    ViewData["Title"] = "موقف المكتبة";
+
+    var inv = CultureInfo.InvariantCulture;
+    string D(DateTime? d) => d.HasValue ? d.Value.ToString("yyyy/MM/dd", inv) : "—";
+    string DIn(DateTime? d) => d.HasValue ? d.Value.ToString("yyyy-MM-dd", inv) : "";
+    string N(int? n) => n.HasValue ? n.Value.ToString(inv) : "—";
+
+    var printedOn = DateTime.Now.ToString("yyyy/MM/dd", inv);
+    int formCols = 9;
+}
+
+<div class="page-head no-print">
+    <div>
+        <h2><i class="fas fa-clipboard-list me-2 text-warning"></i>موقف المكتبة</h2>
+        <p>فهرس النماذج مرتّب بالأرقام — ابحث برقم أي نموذج أو إجراء، واطبع الفهرس. فهرس التعليمات في <a asp-controller="Instructions" asp-action="Index">صفحته المستقلة</a>.</p>
+    </div>
+</div>
+
+@if (TempData["StatusMessage"] is string okMsg)
+{
+    <div class="alert alert-success no-print" role="status">@okMsg</div>
+}
+@if (TempData["StatusError"] is string errMsg)
+{
+    <div class="alert alert-danger no-print" role="alert">@errMsg</div>
+}
+
+<!-- =====================================================
+     1) فهرس النماذج
+     ===================================================== -->
+<section class="index-section" id="formsSection">
+
+    <div class="index-toolbar no-print">
+        <h3 class="section-title">
+            <i class="fas fa-file-lines text-warning"></i> فهرس النماذج
+            <span class="count" id="formsCount">@Model.Forms.Count</span>
+        </h3>
+
+        <div class="search-field">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" class="form-control" data-filter="formsTable" data-counter="formsCount"
+                   placeholder="ابحث برقم النموذج أو رقم الإجراء أو الاسم..." autocomplete="off" />
+        </div>
+
+        <button type="button" class="btn btn-secondary" data-print="forms">
+            <i class="fas fa-print me-1"></i> طباعة الفهرس
+        </button>
+    </div>
+
+    <div class="print-title">
+        <h2>موقف المكتبة — فهرس النماذج</h2>
+        <span>تاريخ الطباعة: @printedOn</span>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table index-table" id="formsTable">
+                <thead>
+                    <tr>
+                        <th class="col-no">م</th>
+                        <th>اسم النموذج</th>
+                        <th>رقم النموذج</th>
+                        <th>رقم الإجراء</th>
+                        <th>رقم الإصدار</th>
+                        <th>تاريخ الإصدار</th>
+                        <th>رقم التعديل</th>
+                        <th>تاريخ التعديل</th>
+                        <th class="no-print"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int fi = 0; }
+                    @foreach (var f in Model.Forms)
+                    {
+                        fi++;
+                        var formSearch = $"{f.FullNumber} {f.ProcedureCode} {f.FormName} {f.DepartmentNo}/{f.FormNumber}";
+
+                        <tr data-search="@formSearch">
+                            <td class="row-no">@fi</td>
+                            <td class="name">@f.FormName</td>
+                            <td>@f.FullNumber</td>
+                            <td><bdi dir="ltr">@(string.IsNullOrWhiteSpace(f.ProcedureCode) ? "—" : f.ProcedureCode)</bdi></td>
+                            <td>@f.Review</td>
+                            <td>@D(f.CreatedAt)</td>
+                            <td>@N(f.AmendmentNumber)</td>
+                            <td>@D(f.AmendmentDate)</td>
+                            <td class="no-print text-nowrap">
+                                @if (Model.FormBookIds.TryGetValue(f.Id, out var formBookId))
+                                {
+                                    <a class="btn btn-secondary btn-sm" asp-controller="Library" asp-action="Details"
+                                       asp-route-id="@formBookId" target="_blank" rel="noopener"
+                                       title="عرض النموذج" aria-label="عرض النموذج">
+                                        <i class="fas fa-eye me-1"></i> عرض
+                                    </a>
+                                }
+                                @if (Model.CanEditForms)
+                                {
+                                    <button type="button" class="btn btn-secondary btn-sm" data-edit-form
+                                            data-id="@f.Id" data-name="@f.FormName"
+                                            data-issue-number="@f.Review" data-issue-date="@DIn(f.CreatedAt)"
+                                            data-amend-number="@f.AmendmentNumber" data-amend-date="@DIn(f.AmendmentDate)"
+                                            title="تعديل بيانات الإصدار والتعديل" aria-label="تعديل">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+
+                    @if (Model.Forms.Count == 0)
+                    {
+                        <tr class="empty-row"><td colspan="@formCols">لا توجد نماذج لعرضها.</td></tr>
+                    }
+                    <tr class="no-results" style="display:none"><td colspan="@formCols">لا توجد نتائج مطابقة للبحث.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     Edit dialogs
+     ===================================================== -->
+@if (Model.CanEditForms)
+{
+    <div class="modal fade no-print" id="formModal" tabindex="-1" aria-labelledby="formModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="UpdateForm" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formModalTitle">بيانات الإصدار والتعديل</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fw-bold mb-3" data-modal-name></p>
+                    <input type="hidden" name="Id" />
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label" for="fm-issue-number">رقم الإصدار</label>
+                            <input type="number" min="0" max="9999" id="fm-issue-number" name="IssueNumber" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="fm-issue-date">تاريخ الإصدار</label>
+                            <input type="date" id="fm-issue-date" name="IssueDate" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="fm-amend-number">رقم التعديل</label>
+                            <input type="number" min="0" max="9999" id="fm-amend-number" name="AmendmentNumber" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="fm-amend-date">تاريخ التعديل</label>
+                            <input type="date" id="fm-amend-date" name="AmendmentDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk me-1"></i> حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            // ---------- search ----------
+            // Lower-case, Arabic-Indic digits -> Latin, and drop spaces / slashes / dashes / dots
+            // so "ن/53/230", "53 230" and "٥٣-٢٣٠" all match the same row.
+            function norm(s) {
+                return (s || '').toString().toLowerCase()
+                    .replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; })
+                    .replace(/[۰-۹]/g, function (d) { return d.charCodeAt(0) - 0x06F0; })
+                    .replace(/[\s\/\\\-_.]+/g, '');
+            }
+
+            document.querySelectorAll('[data-filter]').forEach(function (input) {
+                var table = document.getElementById(input.getAttribute('data-filter'));
+                var counter = document.getElementById(input.getAttribute('data-counter'));
+                if (!table) return;
+
+                var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-search]'));
+                var noResults = table.querySelector('tr.no-results');
+
+                rows.forEach(function (tr) { tr.setAttribute('data-search', norm(tr.getAttribute('data-search'))); });
+
+                function apply() {
+                    var q = norm(input.value);
+                    var shown = 0;
+
+                    rows.forEach(function (tr) {
+                        var ok = !q || tr.getAttribute('data-search').indexOf(q) !== -1;
+                        tr.style.display = ok ? '' : 'none';
+                        if (ok) {
+                            shown++;
+                            var no = tr.querySelector('.row-no');
+                            if (no) no.textContent = shown;   // keep "م" sequential in the printed result
+                        }
+                    });
+
+                    if (counter) counter.textContent = shown;
+                    if (noResults) noResults.style.display = (rows.length > 0 && shown === 0) ? '' : 'none';
+                }
+
+                input.addEventListener('input', apply);
+            });
+
+            // ---------- print one index at a time ----------
+            document.querySelectorAll('[data-print]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.body.setAttribute('data-print', btn.getAttribute('data-print'));
+                    window.print();
+                });
+            });
+            window.addEventListener('afterprint', function () { document.body.removeAttribute('data-print'); });
+
+            // ---------- edit dialogs ----------
+            function openDialog(modalId, btn, withDocNumber) {
+                var modal = document.getElementById(modalId);
+                if (!modal) return;
+
+                function set(name, value) {
+                    var el = modal.querySelector('[name="' + name + '"]');
+                    if (el) el.value = value || '';
+                }
+
+                set('Id', btn.getAttribute('data-id'));
+                set('IssueNumber', btn.getAttribute('data-issue-number'));
+                set('IssueDate', btn.getAttribute('data-issue-date'));
+                set('AmendmentNumber', btn.getAttribute('data-amend-number'));
+                set('AmendmentDate', btn.getAttribute('data-amend-date'));
+                if (withDocNumber) set('DocumentNumber', btn.getAttribute('data-doc-number'));
+
+                var title = modal.querySelector('[data-modal-name]');
+                if (title) title.textContent = btn.getAttribute('data-name') || '';
+
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            }
+
+            document.querySelectorAll('[data-edit-form]').forEach(function (btn) {
+                btn.addEventListener('click', function () { openDialog('formModal', btn, false); });
+            });
+        })();
+    </script>
+}

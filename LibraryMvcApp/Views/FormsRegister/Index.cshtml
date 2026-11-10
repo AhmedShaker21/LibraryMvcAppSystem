@@ -1,0 +1,723 @@
+﻿@model List<FormEntry>
+@{
+    bool isViewer = LibraryMvcApp.Helpers.ReadOnlyRoleFilter.IsReadOnly(User);
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            padding: 2.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(31, 58, 95, 0.3);
+            animation: slideDown 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .page-header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                animation: rotate 20s linear infinite;
+            }
+
+        @@keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-header h2 {
+            color: white;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0 0 1rem 0;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+            .page-header h2 i {
+                font-size: 2.5rem;
+            }
+
+        .info-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 15px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+            .info-badge i {
+                font-size: 1.2rem;
+            }
+
+            .info-badge b {
+                font-size: 1.3rem;
+                font-weight: 800;
+            }
+
+        .count-badge {
+            background: linear-gradient(135deg, #d0614f 0%, #b3402f 100%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* Action Bar */
+        .action-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .action-btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .action-btn::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.6s, height 0.6s;
+            }
+
+            .action-btn span,
+            .action-btn i {
+                position: relative;
+                z-index: 1;
+            }
+
+        .btn-add {
+            background: linear-gradient(135deg, #2e7d5b 0%, #3d9a72 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(46, 125, 91, 0.4);
+        }
+
+           
+
+            .btn-add i {
+                font-size: 1.3rem;
+            }
+
+        /* Table Card */
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out 0.4s backwards;
+        }
+
+        .table-responsive {
+            border-radius: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 0;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+        }
+
+            thead th {
+                color: white;
+                font-weight: 700;
+                padding: 1.25rem 1rem;
+                text-align: center;
+                font-size: 1rem;
+                border: none;
+                white-space: nowrap;
+            }
+
+        tbody tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #e7e1d3;
+        }
+
+
+        tbody td {
+            padding: 1.25rem 1rem;
+            color: #1a2332;
+            border: none;
+            vertical-align: middle;
+        }
+
+        .row-number {
+            color: #a39c8a;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .form-number-cell {
+            display: inline-block;
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(31, 58, 95, 0.3);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #d0614f 0%, #b3402f 100%);
+            color: white;
+            padding: 0.6rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(179, 64, 47, 0.3);
+        }
+
+            .btn-delete:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(179, 64, 47, 0.5);
+            }
+
+            .btn-delete i {
+                font-size: 1rem;
+            }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #a39c8a;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+            .loading-overlay.active {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .page-header h2 {
+                font-size: 1.6rem;
+                flex-direction: column;
+            }
+
+                .page-header h2 i {
+                    font-size: 2rem;
+                }
+
+            .info-row {
+                flex-direction: column;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            thead th, tbody td {
+                padding: 1rem 0.5rem;
+            }
+
+            .form-number-cell {
+                font-size: 0.9rem;
+                padding: 0.4rem 1rem;
+            }
+        }
+
+        form {
+            display: inline;
+        }
+
+        /* Row Animation */
+        /* rows render immediately — a per-row entrance animation made long lists feel slow */
+
+        @@keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>
+            <i class="fas fa-clipboard-list"></i>
+            حصر النماذج – إدارة @ViewBag.DepartmentNo
+        </h2>
+        <div class="info-row">
+            <div class="info-badge">
+                <i class="fas fa-hashtag"></i>
+                آخر رقم نموذج:
+                <b class="ps-3"><strong>@ViewBag.LastFormNumber</strong></b>
+            </div>
+            <div class="info-badge count-badge">
+                <i class="fas fa-file-alt"></i>
+                عدد السجلات:
+                <b class="ps-3"><strong>@Model.Count</strong></b>
+            </div>
+        </div>
+    </div>
+
+    @if (!isViewer)
+    {
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <a asp-controller="FormsRegister"
+           asp-action="Create"
+           asp-route-departmentNo="@ViewBag.DepartmentNo"
+           class="action-btn btn-add"
+           title="إضافة نموذج جديد">
+            <i class="fas fa-plus-circle"></i>
+            <span>إضافة نموذج جديد</span>
+        </a>
+    </div>
+
+    }
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 10%">#</th>
+                        <th style="width: 20%">رقم النموذج</th>
+                        <th style="width: 20%">اسم الإجراء</th>
+                        <th style="width: 20%">اسم النموذج</th>
+                        <th style="width: 15%">حذف النموذج</th>
+                        <th style="width: 15%">عدد المراجعات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        var i = 1;
+                        foreach (var x in Model)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    <span class="row-number">@i</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="form-number-cell">@x.FullNumber</span>
+                                </td>
+
+                                <td>
+                                    @x.ProcedureName
+                                </td>
+                                <td>@x.FormName</td>
+                                <td class="text-center">
+                                    @if (isViewer)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                    <form asp-controller="FormsRegister"
+                                          asp-action="Delete"
+                                          method="post"
+                                          onsubmit="return confirmDelete();">
+                                        <input type="hidden" name="id" value="@x.Id" />
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn-delete"
+                                                title="حذف النموذج">
+                                            <i class="fas fa-trash-alt"></i>
+                                            <span>حذف</span>
+                                        </button>
+                                    </form>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (isViewer)
+                                    {
+                                        <strong>@x.Review</strong>
+                                    }
+                                    else
+                                    {
+                                    <form asp-action="UpdateReview"
+                                          asp-controller="FormsRegister"
+                                          method="post"
+                                          class="d-flex justify-content-center gap-2">
+
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@x.Id" />
+
+                                        <input type="number"
+                                               name="review"
+                                               value="@x.Review"
+                                               min="0"
+                                               class="form-control form-control-sm"
+                                               style="width:80px;" />
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-success">
+                                            💾
+                                        </button>
+                                    </form>
+                                    }
+                                </td>
+
+                            </tr>
+
+                            i++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <div class="empty-state-text">لا توجد نماذج مسجلة حتى الآن</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
+
+@section Scripts {
+    <script>
+        // Loading overlay control
+        function showLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        // Filter forms function
+        function filterForms() {
+            const deptNoInput = document.getElementById("departmentNo");
+            if (!deptNoInput) return;
+
+            const deptNo = deptNoInput.value;
+
+            if (!deptNo || deptNo <= 0) {
+                showNotification("⚠️ الرجاء إدخال رقم إدارة صحيح", "error");
+                return;
+            }
+
+            let url = "/Admin/FormsRegister/Filter";
+            url += `?departmentNo=${deptNo}`;
+
+            showLoading();
+
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Department not found');
+                    }
+                    return res.text();
+                })
+                .then(html => {
+                    const tableContainer = document.getElementById("formsTable");
+                    if (tableContainer) {
+                        tableContainer.style.opacity = '0';
+
+                        setTimeout(() => {
+                            tableContainer.innerHTML = html;
+                            tableContainer.style.transition = 'opacity 0.5s ease';
+                            tableContainer.style.opacity = '1';
+                        }, 200);
+                    }
+
+                    hideLoading();
+                })
+                .catch(() => {
+                    hideLoading();
+                    showNotification("❌ رقم الإدارة غير موجود أو حدث خطأ في التحميل", "error");
+                });
+        }
+
+        // Confirm delete function
+        function confirmDelete() {
+            return confirm('🗑️ هل أنت متأكد من حذف هذا النموذج؟\nلا يمكن التراجع عن هذا الإجراء.');
+        }
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? 'linear-gradient(135deg, #d0614f 0%, #b3402f 100%)' : 'linear-gradient(135deg, #2e7d5b 0%, #3d9a72 100%)'};
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideDownNotif 0.5s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideUpNotif 0.5s ease';
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+
+        // Enter key support for filter input
+        document.addEventListener('DOMContentLoaded', function() {
+            const deptInput = document.getElementById('departmentNo');
+            if (deptInput) {
+                deptInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        filterForms();
+                    }
+                });
+            }
+
+        });
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes slideDownNotif {
+                from {
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+            }
+            @@keyframes slideUpNotif {
+                from {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(-20px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add ripple effect to buttons
+        document.querySelectorAll('.action-btn, .btn-delete').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: rgba(255, 255, 255, 0.5);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple 0.6s ease-out;
+                    pointer-events: none;
+                `;
+
+                this.appendChild(ripple);
+
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Ripple animation
+        const rippleStyle = document.createElement('style');
+        rippleStyle.textContent = `
+            @@keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(rippleStyle);
+
+     
+        });
+    </script>
+}

@@ -1,0 +1,13 @@
+﻿@{
+    ViewData["Title"] = "غير مسموح";
+}
+
+<div class="empty-state mx-auto" style="max-width:560px">
+    <i class="fas fa-ban" style="color:var(--danger)"></i>
+    <h4>غير مسموح</h4>
+    <p class="mb-4">@(TempData["ErrorMessage"] ?? "ليس لديك صلاحية لتنفيذ هذا الإجراء.")</p>
+
+    <a class="btn btn-primary" asp-controller="Folder" asp-action="Index">
+        <i class="fas fa-house me-1"></i> العودة للرئيسية
+    </a>
+</div>

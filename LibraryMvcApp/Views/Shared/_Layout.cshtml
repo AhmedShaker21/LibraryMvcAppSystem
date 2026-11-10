@@ -1,0 +1,159 @@
+﻿@{
+    var controller = (ViewContext.RouteData.Values["controller"]?.ToString() ?? "").ToLowerInvariant();
+
+    string section = controller switch
+    {
+        "folder" or "library" or "adminbooks" => "files",
+        "librarystatus" => "status",
+        "instructions" => "instructions",
+        "departments" => "departments",
+        "formsregister" => "forms",
+        "adminusers" => "users",
+        _ => ""
+    };
+
+    string Active(string key) => section == key ? "active" : "";
+
+    bool isAuth = User.Identity?.IsAuthenticated == true;
+    bool isAdmin = User.IsInRole("Admin");
+    string userName = User.Identity?.Name ?? "";
+    string initial = string.IsNullOrWhiteSpace(userName) ? "؟" : userName.Trim().Substring(0, 1);
+    string pageTitle = ViewData["Title"]?.ToString() ?? "المكتبة";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1c30" />
+    <title>@pageTitle - المكتبة</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+
+    @if (isAuth)
+    {
+        <!-- ================= SIDEBAR ================= -->
+        <aside class="sidebar" id="sidebar" aria-label="القائمة الرئيسية">
+            <a class="sidebar-brand" asp-controller="Folder" asp-action="Index" asp-route-id="">
+                <span class="brand-mark"><i class="fas fa-book-open"></i></span>
+                <span class="brand-text">
+                    <strong>المكتبة</strong>
+                    <small>نظام المستندات الإلكتروني</small>
+                </span>
+            </a>
+
+            <nav class="sidebar-nav">
+                <div class="nav-label">الرئيسية</div>
+                <a class="side-link @Active("files")" asp-controller="Folder" asp-action="Index" asp-route-id="">
+                    <i class="fas fa-folder-open"></i> الملفات
+                </a>
+                <a class="side-link @Active("status")" asp-controller="LibraryStatus" asp-action="Index">
+                    <i class="fas fa-clipboard-list"></i> موقف المكتبة
+                </a>
+                <a class="side-link @Active("instructions")" asp-controller="Instructions" asp-action="Index">
+                    <i class="fas fa-list-check"></i> فهرس التعليمات
+                </a>
+
+                @if (isAdmin)
+                {
+                    <div class="nav-label">الإدارة</div>
+                    <a class="side-link @Active("departments")" asp-controller="Departments" asp-action="Index">
+                        <i class="fas fa-building"></i> الإدارات
+                    </a>
+                    <a class="side-link @Active("forms")" asp-controller="FormsRegister" asp-action="All">
+                        <i class="fas fa-table-list"></i> كل النماذج
+                    </a>
+                    <a class="side-link @Active("users")" asp-controller="AdminUsers" asp-action="Index">
+                        <i class="fas fa-users-gear"></i> إدارة المستخدمين
+                    </a>
+                }
+            </nav>
+
+            <div class="sidebar-user">
+                <span class="avatar">@initial</span>
+                <div class="user-meta">
+                    <strong title="@userName">@userName</strong>
+                    <small>@(isAdmin ? "مدير النظام" : "مستخدم")</small>
+                </div>
+                <a class="logout-btn" asp-controller="Account" asp-action="Logout" title="تسجيل الخروج" aria-label="تسجيل الخروج">
+                    <i class="fas fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    }
+
+    <div class="main-area" style="@(isAuth ? "" : "margin-inline-start:0")">
+
+        <!-- ================= TOPBAR ================= -->
+        <header class="topbar">
+            @if (isAuth)
+            {
+                <button type="button" class="menu-toggle" id="menuToggle" aria-label="فتح القائمة" aria-controls="sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            }
+            else
+            {
+                <a class="sidebar-brand p-0 border-0" style="color:var(--ink-900)" asp-controller="Folder" asp-action="Index">
+                    <span class="brand-mark"><i class="fas fa-book-open"></i></span>
+                    <span class="brand-text"><strong style="color:var(--ink-900)">المكتبة</strong></span>
+                </a>
+            }
+
+            <div class="topbar-title">@pageTitle</div>
+
+            @if (!isAuth)
+            {
+                <a class="btn btn-primary btn-sm ms-auto" asp-controller="Account" asp-action="Login">
+                    <i class="fas fa-right-to-bracket me-1"></i> تسجيل الدخول
+                </a>
+            }
+        </header>
+
+        <!-- ================= BODY ================= -->
+        <main class="page-content">
+            @RenderBody()
+        </main>
+
+        <footer class="app-footer">
+            &copy; @DateTime.Now.Year · نظام المكتبة الإلكتروني · Generated By Eng. Ahmed Shaker
+        </footer>
+    </div>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            var sidebar = document.getElementById('sidebar');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            var toggle = document.getElementById('menuToggle');
+            if (!sidebar || !toggle) return;
+
+            function setOpen(open) {
+                sidebar.classList.toggle('open', open);
+                backdrop.classList.toggle('show', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+
+            toggle.addEventListener('click', function () { setOpen(!sidebar.classList.contains('open')); });
+            backdrop.addEventListener('click', function () { setOpen(false); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+            sidebar.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', function () { setOpen(false); });
+            });
+        })();
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,291 @@
+﻿@model LibraryMvcApp.Models.Folder
+@using System.Linq
+@{
+    ViewData["Title"] = "الملفات";
+
+    bool isRoot = Model.Id == 0;
+    bool isAdmin = User.IsInRole("Admin");
+    bool isViewer = LibraryMvcApp.Helpers.ReadOnlyRoleFilter.IsReadOnly(User);
+    bool canManageCurrentFolder =
+        !isViewer && (isAdmin ||
+        (!string.IsNullOrEmpty(Model.AllowedRole) && User.IsInRole(Model.AllowedRole)));
+
+    var breadcrumb = ViewBag.Breadcrumb as List<LibraryMvcApp.Models.Folder> ?? new List<LibraryMvcApp.Models.Folder>();
+    int subCount = Model.SubFolders.Count;
+    int bookCount = Model.Books.Count;
+}
+
+<!-- ================= HEADER ================= -->
+<div class="page-head">
+    <div>
+        <ul class="crumbs mb-2">
+            @if (isRoot)
+            {
+                <li><span class="current"><i class="fas fa-house me-1"></i>الرئيسية</span></li>
+            }
+            else
+            {
+                <li><a asp-controller="Folder" asp-action="Index" asp-route-id=""><i class="fas fa-house me-1"></i>الرئيسية</a></li>
+                @foreach (var f in breadcrumb)
+                {
+                    if (f.Id == Model.Id)
+                    {
+                        <li><span class="current">@f.Name</span></li>
+                    }
+                    else
+                    {
+                        <li><a asp-controller="Folder" asp-action="Index" asp-route-id="@f.Id">@f.Name</a></li>
+                    }
+                }
+            }
+        </ul>
+
+        <h2>@(isRoot ? "كل الملفات" : Model.Name)</h2>
+        <p>@subCount مجلد · @bookCount ملف</p>
+    </div>
+
+    <div class="actions">
+        @if (!isRoot)
+        {
+            <a class="btn btn-secondary"
+               asp-controller="Folder"
+               asp-action="Index"
+               asp-route-id="@Model.ParentFolderId">
+                <i class="fas fa-arrow-right me-1"></i> رجوع
+            </a>
+        }
+
+        @if (canManageCurrentFolder && !isRoot)
+        {
+            <a asp-controller="AdminBooks"
+               asp-action="Create"
+               asp-route-folderId="@Model.Id"
+               class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> إضافة كتاب
+            </a>
+        }
+    </div>
+</div>
+
+<!-- ================= SEARCH ================= -->
+<div class="search-field">
+    <i class="fas fa-magnifying-glass"></i>
+    <input type="search"
+           id="searchBox"
+           class="form-control"
+           placeholder="ابحث عن كتاب أو مجلد..."
+           autocomplete="off" />
+</div>
+<div id="searchResult" aria-live="polite"></div>
+
+<!-- ================= NEW FOLDER (admin) ================= -->
+@if (isAdmin)
+{
+    <form asp-controller="Folder"
+          asp-action="Create"
+          method="post"
+          class="panel mt-3 d-flex gap-2 flex-wrap align-items-center">
+
+        <input type="hidden" name="parentId" value="@Model.Id" />
+
+        <span class="fw-bold text-muted"><i class="fas fa-folder-plus me-1 text-warning"></i> مجلد جديد</span>
+
+        <input type="text"
+               name="name"
+               class="form-control"
+               style="flex:1 1 220px; min-width:180px"
+               placeholder="اسم المجلد"
+               required />
+
+        <select name="allowedRole" class="form-select" style="flex:0 1 200px">
+            <option value="">عام (عرض فقط)</option>
+            <option value="Quality">Quality</option>
+            <option value="HR">HR</option>
+            <option value="Production">Production</option>
+        </select>
+
+        <button type="submit" class="btn btn-warning">
+            <i class="fas fa-plus me-1"></i> إنشاء
+        </button>
+    </form>
+}
+
+@if (subCount == 0 && bookCount == 0)
+{
+    <div class="empty-state mt-4">
+        <i class="fas fa-box-open"></i>
+        <h5>هذا المكان فارغ</h5>
+        <p class="mb-0">لا توجد مجلدات أو ملفات هنا حتى الآن.</p>
+    </div>
+}
+
+<!-- ================= FOLDERS ================= -->
+@if (subCount > 0)
+{
+    <h3 class="section-title"><i class="fas fa-folder text-warning"></i> المجلدات <span class="count">@subCount</span></h3>
+
+    <div class="tile-grid">
+        @foreach (var folder in Model.SubFolders)
+        {
+            bool canManageFolder =
+                !isViewer && (isAdmin ||
+                (!string.IsNullOrEmpty(folder.AllowedRole) && User.IsInRole(folder.AllowedRole)));
+
+            <div class="folder-tile">
+                <a class="folder-main" asp-controller="Folder" asp-action="Index" asp-route-id="@folder.Id">
+                    <span class="folder-icon"><i class="fas fa-folder"></i></span>
+                    <span>
+                        <span class="folder-name d-block">@folder.Name</span>
+                        <span class="folder-meta">
+                            @if (!string.IsNullOrEmpty(folder.AllowedRole))
+                            {
+                                <i class="fas fa-lock me-1"></i><span>@folder.AllowedRole</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-globe me-1"></i><span>عام</span>
+                            }
+                        </span>
+                    </span>
+                </a>
+
+                @if (canManageFolder)
+                {
+                    <div class="tile-actions">
+                        <form asp-controller="Folder" asp-action="Rename" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@folder.Id" />
+                            <input type="hidden" name="newName" value="@folder.Name" />
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="renameFolder(this)" title="إعادة تسمية">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </form>
+
+                        <form asp-controller="Folder"
+                              asp-action="Delete"
+                              method="post"
+                              onsubmit="return confirm('سيتم حذف هذا المجلد وكل محتوياته. هل أنت متأكد؟');"
+                              class="d-inline">
+                            <input type="hidden" name="id" value="@folder.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<!-- ================= BOOKS ================= -->
+@if (bookCount > 0)
+{
+    <h3 class="section-title"><i class="fas fa-book text-warning"></i> الملفات <span class="count">@bookCount</span></h3>
+
+    <div class="book-grid">
+        @foreach (var book in Model.Books)
+        {
+            var bookType = (book.FileType ?? "").Trim().ToLowerInvariant();
+
+            <article class="book-card">
+                <div class="book-cover">
+                    <img src="@(string.IsNullOrEmpty(book.CoverImagePath) ? "/images/default-cover.jpg" : book.CoverImagePath)"
+                         alt="@book.Title"
+                         loading="lazy" />
+                    @if (!string.IsNullOrEmpty(bookType))
+                    {
+                        <span class="type-chip type-@bookType">@bookType</span>
+                    }
+                </div>
+
+                <div class="book-body">
+                    <h4 class="book-title">@book.Title</h4>
+                    <p class="book-author"><i class="fas fa-user me-1"></i>@(string.IsNullOrWhiteSpace(book.Author) ? "غير معروف" : book.Author)</p>
+
+                    <div class="book-actions">
+                        <a asp-controller="Library"
+                           asp-action="Details"
+                           asp-route-id="@book.Id"
+                           asp-route-folderId="@Model.Id"
+                           class="btn btn-primary btn-sm btn-read">
+                            <i class="fas fa-book-open me-1"></i> قراءة
+                        </a>
+
+                        @if (canManageCurrentFolder)
+                        {
+                            <a asp-controller="AdminBooks"
+                               asp-action="Edit"
+                               asp-route-id="@book.Id"
+                               asp-route-folderId="@Model.Id"
+                               class="btn btn-secondary btn-sm"
+                               title="تعديل">
+                                <i class="fas fa-pen"></i>
+                            </a>
+
+                            <form asp-controller="AdminBooks"
+                                  asp-action="Delete"
+                                  method="post"
+                                  onsubmit="return confirm('هل أنت متأكد من حذف هذا الكتاب؟');"
+                                  class="d-inline">
+                                <input type="hidden" name="id" value="@book.Id" />
+                                <input type="hidden" name="folderId" value="@Model.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function renameFolder(button) {
+            var form = button.closest('form');
+            var input = form.querySelector('input[name="newName"]');
+
+            var newName = prompt("اكتب الاسم الجديد:", input.value);
+            if (newName === null) return;
+
+            if (newName.trim() === "") {
+                alert("الاسم لا يمكن أن يكون فارغاً");
+                return;
+            }
+
+            input.value = newName.trim();
+            form.submit();
+        }
+
+        (function () {
+            var searchBox = document.getElementById("searchBox");
+            var resultDiv = document.getElementById("searchResult");
+            var timer = null;
+
+            searchBox.addEventListener("input", function () {
+                clearTimeout(timer);
+
+                timer = setTimeout(function () {
+                    var q = searchBox.value.trim();
+
+                    if (!q) {
+                        resultDiv.innerHTML = "";
+                        return;
+                    }
+
+                    fetch("/Folder/Search?q=" + encodeURIComponent(q), { credentials: "same-origin" })
+                        .then(function (res) {
+                            if (!res.ok) { throw new Error(res.status); }
+                            return res.text();
+                        })
+                        .then(function (html) { resultDiv.innerHTML = html; })
+                        .catch(function () {
+                            resultDiv.innerHTML = '<p class="text-danger mb-0">تعذّر تنفيذ البحث، حاول مرة أخرى.</p>';
+                        });
+                }, 300);
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,646 @@
+﻿@model List<LibraryMvcApp.ViewModels.DepartmentWithLastFormVm>
+@{
+    ViewData["Title"] = "الإدارات";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            padding: 2.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(31, 58, 95, 0.3);
+            animation: slideDown 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .page-header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                animation: rotate 20s linear infinite;
+            }
+
+        @@keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-header h2 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+            .page-header h2 i {
+                font-size: 2.8rem;
+                animation: pulse 2s ease-in-out infinite;
+            }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .stats-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 1rem;
+        }
+
+        /* Table Card */
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .table-responsive {
+            border-radius: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 0;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+            thead th {
+                color: white;
+                font-weight: 700;
+                padding: 1.5rem 1rem;
+                text-align: center;
+                font-size: 1.1rem;
+                border: none;
+                white-space: nowrap;
+            }
+
+        tbody tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #e7e1d3;
+            cursor: pointer;
+        }
+
+          
+
+        tbody td {
+            padding: 1.5rem 1rem;
+            color: #1a2332;
+            border: none;
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        /* Department Badge */
+        .dept-number {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(31, 58, 95, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .dept-number::before {
+                content: '🏢';
+                font-size: 1.5rem;
+                margin-left: 0.25rem;
+            }
+
+            .dept-number::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.2);
+                transform: translate(-50%, -50%);
+                transition: width 0.6s, height 0.6s;
+            }
+
+       
+        /* Last Form Number */
+        .form-number {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #d0614f 0%, #b3402f 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(208, 97, 79, 0.3);
+        }
+
+            .form-number::before {
+                content: '📄';
+                font-size: 1.3rem;
+            }
+
+        /* Action Buttons */
+        .action-group {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .action-btn::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.6s, height 0.6s;
+            }
+
+            .action-btn:hover::before {
+                width: 300px;
+                height: 300px;
+            }
+
+            .action-btn span {
+                position: relative;
+                z-index: 1;
+            }
+
+        .btn-view {
+            background: linear-gradient(135deg, #1f3a5f 0%, #0f1c30 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(31, 58, 95, 0.4);
+        }
+
+            .btn-view:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(31, 58, 95, 0.5);
+            }
+
+            .btn-view i {
+                font-size: 1.1rem;
+            }
+
+        .btn-add {
+            background: linear-gradient(135deg, #2e7d5b 0%, #3d9a72 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 125, 91, 0.4);
+        }
+
+            .btn-add:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(46, 125, 91, 0.5);
+            }
+
+            .btn-add i {
+                font-size: 1.1rem;
+            }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #a39c8a;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .page-header h2 {
+                font-size: 1.8rem;
+                flex-direction: column;
+                text-align: center;
+            }
+
+                .page-header h2 i {
+                    font-size: 2rem;
+                }
+
+            .stats-badge {
+                margin: 0.5rem 0;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            thead th, tbody td {
+                padding: 1rem 0.5rem;
+            }
+
+            .dept-number,
+            .form-number {
+                font-size: 1rem;
+                padding: 0.6rem 1rem;
+            }
+
+            .action-group {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .action-btn {
+                width: 100%;
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+            }
+        }
+
+        /* Row Animation */
+        tbody tr {
+            animation: fadeInRow 0.5s ease backwards;
+        }
+
+        @@keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .add-dept-btn {
+            background: linear-gradient(135deg, #2e7d5b 0%, #3d9a72 100%);
+            color: #fff !important;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none !important; /* يشيل الخط */
+            box-shadow: 0 4px 12px rgba(46, 125, 91, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.3s ease;
+        }
+        .header-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* ⭐ المطلوب */
+            gap: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+
+            .add-dept-btn:hover {
+                background: linear-gradient(135deg, #2e7d5b 0%, #3d9a72 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 18px rgba(46, 125, 91, 0.6);
+                text-decoration: none; /* تأكيد */
+            }
+
+            .add-dept-btn:active {
+                transform: translateY(0);
+            }
+
+        /* Hover Glow Effect */
+        .action-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* Column Widths */
+        .col-dept {
+            width: 25%;
+        }
+
+        .col-form {
+            width: 25%;
+        }
+
+        .col-actions {
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page Header -->
+    <div class="page-header header-flex">
+        <h2>
+            <i class="fas fa-building"></i>
+            الإدارات
+            @if (Model != null && Model.Any())
+            {
+                <span class="stats-badge">
+                    <i class="fas fa-list-ol ps-3"></i>
+                    <strong class="ps-3 fs-5">@Model.Count إدارة</strong>
+                </span>
+            }
+        </h2>
+
+        @if (!LibraryMvcApp.Helpers.ReadOnlyRoleFilter.IsReadOnly(User))
+        {
+        <div class="header-actions">
+            <a asp-controller="Departments"
+               asp-action="Create"
+               class="stats-badge add-dept-btn">
+                ➕ إضافة إدارة
+            </a>
+        </div>
+        }
+    </div>
+
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-dept">رقم الإدارة</th>
+                        <th class="col-form">آخر رقم نموذج</th>
+                        <th class="col-actions">إجراءات</th>
+                        <th class="col-actions">حذف الادارة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        int index = 0;
+                        foreach (var item in Model)
+                        {
+                            <tr style="animation-delay: @(index * 0.05)s">
+                                <td class="text-center">
+                                    <span class="dept-number">
+                                        <strong>@item.Department.Code</strong>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="form-number">
+                                        <strong>@item.LastFormNumber</strong>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-group">
+                                        <!-- عرض النماذج -->
+                                        <a class="action-btn btn-view"
+                                           asp-controller="FormsRegister"
+                                           asp-action="Index"
+                                           asp-route-departmentNo="@item.Department.Code">
+                                            <i class="fas fa-eye"></i>
+                                            <span>عرض النماذج</span>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-group">
+                                @if (!LibraryMvcApp.Helpers.ReadOnlyRoleFilter.IsReadOnly(User))
+                                {
+                                <form asp-action="Delete"
+                                      method="post"
+                                      onsubmit="return confirm('هل أنت متأكد من حذف هذه الإدارة؟');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Department.Id" />
+                                    <button class="btn btn-danger btn-sm">
+                                        🗑 حذف
+                                    </button>
+                                </form>
+                                }
+                                    </div>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="3" class="empty-state">
+                                <div class="empty-state-icon">🏢</div>
+                                <div class="empty-state-text">لا توجد إدارات مسجلة حالياً</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
+
+@section Scripts {
+    <script>
+
+        // Quick action on row click (optional - goes to view forms)
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const viewBtn = row.querySelector('.btn-view');
+            if (viewBtn) {
+                row.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on a button
+                    if (!e.target.closest('.action-btn')) {
+                        viewBtn.click();
+                    }
+                });
+            }
+        });
+
+        // Add ripple effect to buttons
+        document.querySelectorAll('.action-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: rgba(255, 255, 255, 0.5);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple 0.6s ease-out;
+                    pointer-events: none;
+                `;
+
+                this.appendChild(ripple);
+
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Add ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @@keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Animate numbers on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const numbers = document.querySelectorAll('.dept-number strong, .form-number strong');
+            numbers.forEach(num => {
+                const originalText = num.textContent;
+                num.textContent = '0';
+
+                let current = 0;
+                const target = parseInt(originalText) || 0;
+                const duration = 1500;
+                const step = target / (duration / 16);
+
+                const animate = () => {
+                    current += step;
+                    if (current < target) {
+                        num.textContent = Math.floor(current);
+                        requestAnimationFrame(animate);
+                    } else {
+                        num.textContent = originalText;
+                    }
+                };
+
+                setTimeout(() => animate(), 500);
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            const rows = Array.from(document.querySelectorAll('tbody tr'));
+            const activeElement = document.activeElement;
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const currentRow = activeElement.closest('tr');
+                if (currentRow) {
+                    const currentIndex = rows.indexOf(currentRow);
+                    const nextIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
+                    if (rows[nextIndex]) {
+                        rows[nextIndex].focus();
+                    }
+                } else if (rows[0]) {
+                    rows[0].focus();
+                }
+            }
+        });
+
+        // Make rows focusable
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.setAttribute('tabindex', '0');
+        });
+    </script>
+}

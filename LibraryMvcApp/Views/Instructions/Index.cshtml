@@ -1,0 +1,270 @@
+﻿@using System.Globalization
+@using LibraryMvcApp.ViewModels
+@model InstructionsVm
+@{
+    ViewData["Title"] = "فهرس التعليمات";
+
+    var inv = CultureInfo.InvariantCulture;
+    string D(DateTime? d) => d.HasValue ? d.Value.ToString("yyyy/MM/dd", inv) : "—";
+    string DIn(DateTime? d) => d.HasValue ? d.Value.ToString("yyyy-MM-dd", inv) : "";
+    string N(int? n) => n.HasValue ? n.Value.ToString(inv) : "—";
+
+    var printedOn = DateTime.Now.ToString("yyyy/MM/dd", inv);
+    bool anyInstructionEdit = Model.Items.Any(r => r.CanEdit);
+    int docCols = anyInstructionEdit ? 8 : 7;
+}
+
+<div class="page-head no-print">
+    <div>
+        <h2><i class="fas fa-list-check me-2 text-warning"></i>فهرس التعليمات</h2>
+        <p>كل الكتب المعلَّمة «تعليمات / إجراء» — ابحث برقم الوثيقة أو الاسم، واطبع الفهرس.</p>
+    </div>
+</div>
+
+@if (TempData["StatusMessage"] is string okMsg)
+{
+    <div class="alert alert-success no-print" role="status">@okMsg</div>
+}
+@if (TempData["StatusError"] is string errMsg)
+{
+    <div class="alert alert-danger no-print" role="alert">@errMsg</div>
+}
+
+<section class="index-section" id="instructionsSection">
+
+    <div class="index-toolbar no-print">
+        <h3 class="section-title">
+            <i class="fas fa-list-check text-warning"></i> فهرس التعليمات
+            <span class="count" id="docsCount">@Model.Items.Count</span>
+        </h3>
+
+        <div class="search-field">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" class="form-control" data-filter="docsTable" data-counter="docsCount"
+                   placeholder="ابحث برقم الوثيقة أو الاسم..." autocomplete="off" />
+        </div>
+
+        <button type="button" class="btn btn-secondary" data-print="docs">
+            <i class="fas fa-print me-1"></i> طباعة الفهرس
+        </button>
+
+        @if (Model.IsAdmin)
+        {
+            <form asp-action="FlagFromFolder" method="post" class="d-inline"
+                  onsubmit="return confirm('تعليم كل الملفات الموجودة داخل مجلد «تعليمات» (وكل مجلداته الفرعية) كتعليمات؟');">
+                <button type="submit" class="btn btn-secondary" title="تعليم كل ملفات مجلد تعليمات كتعليمات">
+                    <i class="fas fa-wand-magic-sparkles me-1"></i> تعليم ملفات مجلد التعليمات
+                </button>
+            </form>
+        }
+    </div>
+
+        <div class="print-title">
+            <h2>فهرس التعليمات</h2>
+            <span>تاريخ الطباعة: @printedOn</span>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table index-table" id="docsTable">
+                    <thead>
+                        <tr>
+                            <th class="col-no">م</th>
+                            <th>اسم التعليمات / الإجراءات</th>
+                            <th>رقم الوثيقة</th>
+                            <th>رقم الإصدار</th>
+                            <th>تاريخ الإصدار</th>
+                            <th>رقم التعديل</th>
+                            <th>تاريخ التعديل</th>
+                            @if (anyInstructionEdit)
+                            {
+                                <th class="no-print"></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int di = 0; }
+                        @foreach (var row in Model.Items)
+                        {
+                            di++;
+                            var b = row.Book;
+                            var docSearch = $"{b.DocumentNumber} {b.Title}";
+
+                            <tr data-search="@docSearch">
+                                <td class="row-no">@di</td>
+                                <td class="name">
+                                    <a asp-controller="Library" asp-action="Details" asp-route-id="@b.Id" asp-route-folderId="@b.FolderId">@b.Title</a>
+                                    @if (!string.IsNullOrEmpty(row.SubPath))
+                                    {
+                                        <small class="d-block text-muted no-print"><i class="fas fa-folder me-1"></i>@row.SubPath</small>
+                                    }
+                                </td>
+                                <td><bdi dir="ltr">@(string.IsNullOrWhiteSpace(b.DocumentNumber) ? "—" : b.DocumentNumber)</bdi></td>
+                                <td>@N(b.IssueNumber)</td>
+                                <td>@D(b.IssueDate)</td>
+                                <td>@N(b.AmendmentNumber)</td>
+                                <td>@D(b.AmendmentDate)</td>
+                                @if (anyInstructionEdit)
+                                {
+                                    <td class="no-print">
+                                        @if (row.CanEdit)
+                                        {
+                                            <button type="button" class="btn btn-secondary btn-sm" data-edit-doc
+                                                    data-id="@b.Id" data-name="@b.Title" data-doc-number="@b.DocumentNumber"
+                                                    data-issue-number="@b.IssueNumber" data-issue-date="@DIn(b.IssueDate)"
+                                                    data-amend-number="@b.AmendmentNumber" data-amend-date="@DIn(b.AmendmentDate)"
+                                                    title="تعديل بيانات الوثيقة" aria-label="تعديل">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr class="empty-row"><td colspan="@docCols">لا توجد تعليمات بعد. فعّل خيار «تعليمات / إجراء» عند إضافة أو تعديل أي ملف ليظهر هنا.</td></tr>
+                        }
+                        <tr class="no-results" style="display:none"><td colspan="@docCols">لا توجد نتائج مطابقة للبحث.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+</section>
+
+@if (anyInstructionEdit)
+{
+    <div class="modal fade no-print" id="docModal" tabindex="-1" aria-labelledby="docModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="UpdateInstruction" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="docModalTitle">بيانات الوثيقة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fw-bold mb-3" data-modal-name></p>
+                    <input type="hidden" name="Id" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="dm-doc-number">رقم الوثيقة</label>
+                            <input type="text" maxlength="100" id="dm-doc-number" name="DocumentNumber" class="form-control" dir="ltr" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="dm-issue-number">رقم الإصدار</label>
+                            <input type="number" min="0" max="9999" id="dm-issue-number" name="IssueNumber" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="dm-issue-date">تاريخ الإصدار</label>
+                            <input type="date" id="dm-issue-date" name="IssueDate" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="dm-amend-number">رقم التعديل</label>
+                            <input type="number" min="0" max="9999" id="dm-amend-number" name="AmendmentNumber" class="form-control" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label" for="dm-amend-date">تاريخ التعديل</label>
+                            <input type="date" id="dm-amend-date" name="AmendmentDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" asp-action="RemoveInstruction" formnovalidate
+                            class="btn btn-secondary text-danger me-auto"
+                            onclick="return confirm('إخراج هذا الملف من فهرس التعليمات؟ (الملف نفسه لن يُحذف)');">
+                        <i class="fas fa-eraser me-1"></i> إخراج من التعليمات
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk me-1"></i> حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            // ---------- search ----------
+            // Lower-case, Arabic-Indic digits -> Latin, and drop spaces / slashes / dashes / dots
+            // so "ن/53/230", "53 230" and "٥٣-٢٣٠" all match the same row.
+            function norm(s) {
+                return (s || '').toString().toLowerCase()
+                    .replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; })
+                    .replace(/[۰-۹]/g, function (d) { return d.charCodeAt(0) - 0x06F0; })
+                    .replace(/[\s\/\\\-_.]+/g, '');
+            }
+
+            document.querySelectorAll('[data-filter]').forEach(function (input) {
+                var table = document.getElementById(input.getAttribute('data-filter'));
+                var counter = document.getElementById(input.getAttribute('data-counter'));
+                if (!table) return;
+
+                var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr[data-search]'));
+                var noResults = table.querySelector('tr.no-results');
+
+                rows.forEach(function (tr) { tr.setAttribute('data-search', norm(tr.getAttribute('data-search'))); });
+
+                function apply() {
+                    var q = norm(input.value);
+                    var shown = 0;
+
+                    rows.forEach(function (tr) {
+                        var ok = !q || tr.getAttribute('data-search').indexOf(q) !== -1;
+                        tr.style.display = ok ? '' : 'none';
+                        if (ok) {
+                            shown++;
+                            var no = tr.querySelector('.row-no');
+                            if (no) no.textContent = shown;   // keep "م" sequential in the printed result
+                        }
+                    });
+
+                    if (counter) counter.textContent = shown;
+                    if (noResults) noResults.style.display = (rows.length > 0 && shown === 0) ? '' : 'none';
+                }
+
+                input.addEventListener('input', apply);
+            });
+
+            // ---------- print one index at a time ----------
+            document.querySelectorAll('[data-print]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.body.setAttribute('data-print', btn.getAttribute('data-print'));
+                    window.print();
+                });
+            });
+            window.addEventListener('afterprint', function () { document.body.removeAttribute('data-print'); });
+
+            // ---------- edit dialogs ----------
+            function openDialog(modalId, btn, withDocNumber) {
+                var modal = document.getElementById(modalId);
+                if (!modal) return;
+
+                function set(name, value) {
+                    var el = modal.querySelector('[name="' + name + '"]');
+                    if (el) el.value = value || '';
+                }
+
+                set('Id', btn.getAttribute('data-id'));
+                set('IssueNumber', btn.getAttribute('data-issue-number'));
+                set('IssueDate', btn.getAttribute('data-issue-date'));
+                set('AmendmentNumber', btn.getAttribute('data-amend-number'));
+                set('AmendmentDate', btn.getAttribute('data-amend-date'));
+                if (withDocNumber) set('DocumentNumber', btn.getAttribute('data-doc-number'));
+
+                var title = modal.querySelector('[data-modal-name]');
+                if (title) title.textContent = btn.getAttribute('data-name') || '';
+
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            }
+
+            document.querySelectorAll('[data-edit-form]').forEach(function (btn) {
+                btn.addEventListener('click', function () { openDialog('formModal', btn, false); });
+            });
+            document.querySelectorAll('[data-edit-doc]').forEach(function (btn) {
+                btn.addEventListener('click', function () { openDialog('docModal', btn, true); });
+            });
+        })();
+    </script>
+}

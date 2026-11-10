@@ -1,0 +1,16 @@
+﻿@model LibraryMvcApp.ViewModels.ErrorViewModel
+@{
+    ViewData["Title"] = "حدث خطأ";
+}
+
+<div class="empty-state mx-auto" style="max-width:560px">
+    <i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i>
+    <h4>عذراً، حدث خطأ</h4>
+    <p class="mb-4">@Model.Message</p>
+
+    <a href="@Model.ReturnUrl" class="btn btn-primary">
+        <i class="fas fa-house me-1"></i> العودة للرئيسية
+    </a>
+
+    <p class="text-muted small mt-4 mb-0">لو استمرت المشكلة، تواصل مع الدعم الفني.</p>
+</div>

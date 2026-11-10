@@ -1,0 +1,51 @@
+﻿@model IEnumerable<LibraryMvcApp.Models.Book>
+@{
+    ViewData["Title"] = "المكتبة";
+}
+
+<div class="page-head">
+    <div>
+        <h2><i class="fas fa-book-reader me-2 text-warning"></i>المكتبة</h2>
+        <p>@Model.Count() ملف</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <h5>لا توجد كتب حتى الآن</h5>
+    </div>
+}
+else
+{
+    <div class="book-grid">
+        @foreach (var book in Model)
+        {
+            var bookType = (book.FileType ?? "").Trim().ToLowerInvariant();
+
+            <article class="book-card">
+                <div class="book-cover">
+                    <img src="@(string.IsNullOrEmpty(book.CoverImagePath) ? "/images/default-cover.jpg" : book.CoverImagePath)"
+                         alt="@book.Title"
+                         loading="lazy" />
+                    @if (!string.IsNullOrEmpty(bookType))
+                    {
+                        <span class="type-chip type-@bookType">@bookType</span>
+                    }
+                </div>
+
+                <div class="book-body">
+                    <h4 class="book-title">@book.Title</h4>
+                    <p class="book-author"><i class="fas fa-user me-1"></i>@(string.IsNullOrWhiteSpace(book.Author) ? "غير معروف" : book.Author)</p>
+
+                    <div class="book-actions">
+                        <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-primary btn-sm btn-read">
+                            <i class="fas fa-book-open me-1"></i> قراءة
+                        </a>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

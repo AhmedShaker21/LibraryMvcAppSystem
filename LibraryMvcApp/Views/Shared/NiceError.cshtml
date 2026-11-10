@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Something went wrong";
+}
+
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="card shadow-lg border-0" style="max-width: 500px;">
+        <div class="card-header bg-danger text-white text-center">
+            <h4>⚠️ Oops!</h4>
+        </div>
+        <div class="card-body text-center">
+            <p class="fs-5 text-muted">
+                @ViewBag.ErrorMessage
+            </p>
+
+            <a asp-action="Index"
+               asp-controller="Home"
+               class="btn btn-outline-danger mt-3">
+                ⬅ Back to Home
+            </a>
+        </div>
+    </div>
+</div>

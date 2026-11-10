@@ -1,0 +1,52 @@
+﻿@model LibraryMvcApp.ViewModels.CreateUserVM
+
+@{
+    ViewBag.Title = "Add New User";
+}
+
+<div class="page-header mb-4">
+    <h2><i class="fas fa-user-plus me-2"></i>Add New User</h2>
+</div>
+
+<form method="post" class="form-container">
+
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input name="email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select">
+            <option value="">Select Role</option>
+            @foreach (var r in ViewBag.Roles)
+            {
+                <option value="@r">@r</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Department</label>
+        <select class="form-control" asp-for="DepartmentId" asp-items="(List<SelectListItem>)ViewBag.Departments">
+            <option value="">-- Select Department --</option>
+        </select>
+        <span class="text-danger" asp-validation-for="DepartmentId"></span>
+    </div>
+
+
+    <button class="btn btn-success">
+        <i class="fas fa-save me-1"></i> Create User
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary">
+        Cancel
+    </a>
+</form>

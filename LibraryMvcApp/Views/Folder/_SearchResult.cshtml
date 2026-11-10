@@ -1,0 +1,65 @@
+﻿@using LibraryMvcApp.ViewModels
+@model SearchViewModel
+
+@if (!Model.Folders.Any() && !Model.Books.Any())
+{
+    <p class="text-muted mb-0"><i class="fas fa-circle-info me-1"></i> لا توجد نتائج مطابقة.</p>
+}
+
+@if (Model.Folders.Any())
+{
+    <h3 class="section-title mt-0"><i class="fas fa-folder text-warning"></i> المجلدات <span class="count">@Model.Folders.Count</span></h3>
+
+    <div class="tile-grid">
+        @foreach (var folder in Model.Folders)
+        {
+            <div class="folder-tile">
+                <a class="folder-main" asp-controller="Folder" asp-action="Index" asp-route-id="@folder.Id">
+                    <span class="folder-icon"><i class="fas fa-folder"></i></span>
+                    <span class="folder-name">@folder.Name</span>
+                </a>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.Books.Any())
+{
+    <h3 class="section-title @(Model.Folders.Any() ? "" : "mt-0")"><i class="fas fa-book text-warning"></i> الكتب <span class="count">@Model.Books.Count</span></h3>
+
+    <div class="book-grid">
+        @foreach (var book in Model.Books)
+        {
+            var bookType = (book.FileType ?? "").Trim().ToLowerInvariant();
+
+            <article class="book-card">
+                <div class="book-cover">
+                    <img src="@(string.IsNullOrEmpty(book.CoverImagePath) ? "/images/default-cover.jpg" : book.CoverImagePath)"
+                         alt="@book.Title"
+                         loading="lazy" />
+                    @if (!string.IsNullOrEmpty(bookType))
+                    {
+                        <span class="type-chip type-@bookType">@bookType</span>
+                    }
+                </div>
+
+                <div class="book-body">
+                    <h4 class="book-title">@book.Title</h4>
+                    @if (!string.IsNullOrWhiteSpace(book.Description))
+                    {
+                        <p class="book-author">@book.Description</p>
+                    }
+
+                    <div class="book-actions">
+                        <a asp-controller="Library"
+                           asp-action="Details"
+                           asp-route-id="@book.Id"
+                           class="btn btn-primary btn-sm btn-read">
+                            <i class="fas fa-book-open me-1"></i> قراءة
+                        </a>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

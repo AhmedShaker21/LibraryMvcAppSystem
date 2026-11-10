@@ -1,0 +1,21 @@
+﻿@model List<FormEntry>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">لا توجد نتائج</div>
+}
+else
+{
+    <table class="table table-sm table-striped">
+        <tbody>
+            @foreach (var x in Model)
+            {
+                <tr>
+                    <td><b>@x.FullNumber</b></td>
+                    <td>@x.FormName</td>
+                    <td>@x.ProcedureCode</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

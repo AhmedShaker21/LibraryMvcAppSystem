@@ -1,0 +1,113 @@
+﻿@using LibraryMvcApp.ViewModels
+@model LoginViewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "تسجيل الدخول";
+}
+
+<div class="auth">
+
+    <!-- ============ BRAND PANEL ============ -->
+    <section class="auth-brand" aria-hidden="false">
+        <div class="auth-logo">
+            <span class="brand-mark"><i class="fas fa-book-open"></i></span>
+            <span>المكتبة</span>
+        </div>
+
+        <div class="auth-hero">
+            <h1>كل مستنداتك <em>في مكان واحد</em>،<br />منظّمة وجاهزة للقراءة.</h1>
+            <p>
+                أرشيف إلكتروني يجمع الملفات والنماذج في مجلدات مرتبة،
+                مع صلاحيات واضحة لكل إدارة وبحث فوري داخل المحتوى.
+            </p>
+
+            <ul class="auth-points">
+                <li><i class="fas fa-folder-tree"></i> مجلدات ومجلدات فرعية بصلاحيات لكل إدارة</li>
+                <li><i class="fas fa-magnifying-glass"></i> بحث سريع في الكتب والمجلدات</li>
+                <li><i class="fas fa-file-pdf"></i> قراءة PDF وWord مباشرة من المتصفح</li>
+            </ul>
+
+            <div class="spines" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <div></div>
+    </section>
+
+    <!-- ============ FORM PANEL ============ -->
+    <section class="auth-panel">
+        <div class="auth-card">
+            <span class="eyebrow"><i class="fas fa-shield-halved"></i> دخول آمن</span>
+            <h2>مرحباً بعودتك</h2>
+            <p class="lead-sm">سجّل الدخول للوصول إلى ملفاتك ومستنداتك.</p>
+
+            <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" id="loginForm">
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2" role="alert"></div>
+
+                <div class="field">
+                    <label asp-for="Username" class="form-label"></label>
+                    <div class="field-wrap">
+                        <input asp-for="Username" class="form-control" placeholder="اسم المستخدم أو البريد الإلكتروني"
+                               autocomplete="username" autofocus required />
+                        <i class="fas fa-user lead-icon"></i>
+                    </div>
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="field-wrap">
+                        <input asp-for="Password" class="form-control" placeholder="••••••••"
+                               autocomplete="current-password" required />
+                        <i class="fas fa-lock lead-icon"></i>
+                        <button type="button" class="toggle-pass" id="togglePass" aria-label="إظهار كلمة المرور">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+
+                <button type="submit" class="auth-submit" id="loginBtn">
+                    <span class="spinner"></span>
+                    <i class="fas fa-right-to-bracket label-icon"></i>
+                    <span>تسجيل الدخول</span>
+                </button>
+            </form>
+
+            <div class="auth-foot">
+                &copy; @DateTime.Now.Year · نظام المكتبة الإلكتروني
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var pass = document.getElementById('Password');
+            var toggle = document.getElementById('togglePass');
+            toggle.addEventListener('click', function () {
+                var show = pass.type === 'password';
+                pass.type = show ? 'text' : 'password';
+                toggle.innerHTML = show ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+                toggle.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+            });
+
+            var form = document.getElementById('loginForm');
+            var btn = document.getElementById('loginBtn');
+            form.addEventListener('submit', function (e) {
+                if (!form.checkValidity()) { return; }   // let the browser show its own message
+                btn.classList.add('loading');
+                btn.disabled = true;
+            });
+        })();
+    </script>
+}

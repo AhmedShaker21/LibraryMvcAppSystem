@@ -1,0 +1,104 @@
+﻿@model LibraryMvcApp.Models.Book
+@{
+    ViewData["Title"] = "قراءة مستند";
+
+    var type = (Model.FileType ?? "").Trim().ToLowerInvariant();
+    bool fileExists = (bool)(ViewBag.FileExists ?? false);
+    bool canPreview = fileExists && (type == "pdf" || type == "doc" || type == "docx");
+    var folderId = (int?)ViewBag.FolderId;
+}
+
+<div class="reader-head">
+    <div>
+        <ul class="crumbs mb-2">
+            <li><a asp-controller="Folder" asp-action="Index" asp-route-id=""><i class="fas fa-house me-1"></i>الرئيسية</a></li>
+            @if (folderId.HasValue && folderId.Value != 0)
+            {
+                <li><a asp-controller="Folder" asp-action="Index" asp-route-id="@folderId">المجلد</a></li>
+            }
+            <li><span class="current">@Model.Title</span></li>
+        </ul>
+
+        <h1>@Model.Title</h1>
+
+        <div class="reader-meta">
+            @if (!string.IsNullOrWhiteSpace(Model.Author))
+            {
+                <span><i class="fas fa-user me-1"></i>@Model.Author</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(type))
+            {
+                <span class="type-chip type-@type">@type</span>
+            }
+            <span><i class="far fa-calendar me-1"></i>@Model.CreatedAt.ToString("yyyy/MM/dd")</span>
+        </div>
+    </div>
+
+    <div class="actions d-flex gap-2 flex-wrap">
+        <a class="btn btn-secondary" asp-controller="Folder" asp-action="Index" asp-route-id="@folderId">
+            <i class="fas fa-arrow-right me-1"></i> رجوع
+        </a>
+        @if (fileExists)
+        {
+            @if (canPreview)
+            {
+                <a class="btn btn-secondary" asp-action="Preview" asp-route-id="@Model.Id" target="_blank" rel="noopener">
+                    <i class="fas fa-up-right-from-square me-1"></i> فتح في تبويب جديد
+                </a>
+            }
+            <a class="btn btn-warning" asp-action="Download" asp-route-id="@Model.Id">
+                <i class="fas fa-download me-1"></i> تحميل
+            </a>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Description))
+{
+    <div class="panel mb-3">
+        <p class="mb-0">@Model.Description</p>
+    </div>
+}
+
+@if (canPreview)
+{
+    <div class="pdf-container">
+        <iframe class="reader-frame"
+                src="@Url.Action("Preview", "Library", new { id = Model.Id })#view=FitH"
+                title="@Model.Title"></iframe>
+    </div>
+}
+else if (fileExists)
+{
+    <div class="empty-state">
+        <i class="fas fa-file-lines"></i>
+        <h5>المعاينة غير متاحة لهذا النوع من الملفات</h5>
+        <p class="mb-3">نوع الملف: <strong>@type</strong> — حمّل الملف لفتحه على جهازك.</p>
+        <a class="btn btn-warning" asp-action="Download" asp-route-id="@Model.Id">
+            <i class="fas fa-download me-1"></i> تحميل الملف
+        </a>
+    </div>
+}
+else
+{
+    <div class="notice" role="alert">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div>
+            <strong>الملف غير موجود على الخادم</strong>
+            <p>
+                @if (string.IsNullOrWhiteSpace(Model.FilePath))
+                {
+                    <span>لم يتم رفع ملف لهذا الكتاب.</span>
+                }
+                else
+                {
+                    <span>السجل موجود في قاعدة البيانات لكن الملف نفسه غير موجود داخل مجلد <code>wwwroot</code>. أعد رفع الملف من شاشة التعديل.</span>
+                }
+            </p>
+            @if (User.IsInRole("Admin") && !string.IsNullOrWhiteSpace(Model.FilePath))
+            {
+                <p class="mb-0"><small class="text-muted">المسار المخزّن: <code dir="ltr">@Model.FilePath</code></small></p>
+            }
+        </div>
+    </div>
+}
